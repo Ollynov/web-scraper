@@ -46,7 +46,7 @@ CREATE TABLE branding_profile_users (
 -- );
 
 -- Just track crawled pages for now, for testing
-CREATE TABLE crawled_pages (
+CREATE TABLE crawled_pages_simple (
   id SERIAL PRIMARY KEY,
   url TEXT NOT NULL,
   status_code INTEGER,
