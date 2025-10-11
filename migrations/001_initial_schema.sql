@@ -31,18 +31,29 @@ CREATE TABLE branding_profile_users (
 );
 
 -- Stores every crawl of every page (history preserved)
+-- CREATE TABLE crawled_pages (
+--   id SERIAL PRIMARY KEY,
+--   branding_profile_id INTEGER REFERENCES branding_profiles(id) ON DELETE CASCADE,
+--   url TEXT NOT NULL,
+--   status_code INTEGER,
+--   content TEXT,  -- HTML content
+--   headers JSONB,  -- response headers as JSON
+--   load_time_ms INTEGER,
+--   crawled_at TIMESTAMP DEFAULT NOW(),
+--   discovered_from_url TEXT,  -- which page linked to this one
+--   depth INTEGER,  -- distance from base URLs
+--   page_type VARCHAR(50) DEFAULT 'html'  -- 'html', 'robots', 'sitemap', 'unknown'
+-- );
+
+-- Just track crawled pages for now, for testing
 CREATE TABLE crawled_pages (
   id SERIAL PRIMARY KEY,
-  branding_profile_id INTEGER REFERENCES branding_profiles(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
   status_code INTEGER,
-  content TEXT,  -- HTML content
-  headers JSONB,  -- response headers as JSON
+  content TEXT,
+  headers JSONB,
   load_time_ms INTEGER,
-  crawled_at TIMESTAMP DEFAULT NOW(),
-  discovered_from_url TEXT,  -- which page linked to this one
-  depth INTEGER,  -- distance from base URLs
-  page_type VARCHAR(50) DEFAULT 'html'  -- 'html', 'robots', 'sitemap', 'unknown'
+  crawled_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Index for fast "latest crawl" queries
