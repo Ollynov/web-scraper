@@ -3,6 +3,7 @@ CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
   name VARCHAR(255),
+  role VARCHAR(20) DEFAULT 'user',  -- app-level: 'user', 'superadmin' (could also related to business plan- 'free_user', etc)
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -24,7 +25,7 @@ CREATE TABLE branding_profile_users (
   id SERIAL PRIMARY KEY,
   branding_profile_id INTEGER REFERENCES branding_profiles(id) ON DELETE CASCADE,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  role VARCHAR(20) DEFAULT 'member',
+  role VARCHAR(20) DEFAULT 'member', -- profile-level: 'owner', 'admin', 'member'
   added_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(branding_profile_id, user_id)  -- prevent duplicate access grants
 );
@@ -47,6 +48,8 @@ CREATE TABLE crawled_pages (
 -- Index for fast "latest crawl" queries
 CREATE INDEX idx_crawled_pages_latest ON crawled_pages(branding_profile_id, url, crawled_at DESC);
 CREATE INDEX idx_crawled_pages_profile_time ON crawled_pages(branding_profile_id, crawled_at);
+-- first index gives us the latest for a specific page www.mybrand.com/page1 while the 2nd gives us overall last crawls for that brand (any url)
+-- we may want to do something in between which is brand --> domain if needed 
 
 -- Simple crawl job tracking
 CREATE TABLE crawl_jobs (
