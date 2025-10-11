@@ -6,6 +6,7 @@
    ```
    PORT=3000
    DATABASE_URL=postgresql://username:password@localhost:5432/web_scraper_mvp
+   FIRECRAWL_API_URL=https://api.firecrawl.dev/v1/scrape
    FIRECRAWL_API_KEY=your_firecrawl_api_key
    ```
 4. Start the server with `npm run dev`
