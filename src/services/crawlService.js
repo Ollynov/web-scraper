@@ -41,6 +41,11 @@ async function crawlUrl(url) {
     );
 
     console.log(`✅ Crawled and saved: ${url}`);
+    // Trigger Postgres notification
+    await db.query("SELECT pg_notify('page_crawled', $1)", [
+      JSON.stringify({ url, branding_profile_id, status_code, crawled_at }),
+    ]);
+
     return result.rows[0];
   } catch (error) {
     console.error(`❌ Failed to crawl ${url}:`, error.message);

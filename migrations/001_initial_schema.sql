@@ -14,10 +14,72 @@ CREATE TABLE branding_profiles (
   domain VARCHAR(255) NOT NULL,
   include_urls TEXT[] DEFAULT '{}',
   exclude_patterns TEXT[] DEFAULT '{}',
+  default_crawl_interval_hours INTEGER DEFAULT 24, -- Crawl scheduling
   rate_limit_ms INTEGER DEFAULT 1000,
   max_staleness_hours INTEGER DEFAULT 168,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
+);
+-- Other ideas for branding_profiles:
+-- high_priority_interval_hours INTEGER DEFAULT 6,   -- for homepage, key pages
+-- low_priority_interval_hours INTEGER DEFAULT 168,  -- for rarely changing pages (7 days)
+-- -- Profile status
+-- status VARCHAR(20) DEFAULT 'active',  -- 'active', 'paused', 'archived'
+-- last_crawl_started_at TIMESTAMP,
+-- last_crawl_completed_at TIMESTAMP,
+-- initial_discovery_completed BOOLEAN DEFAULT false,  -- have we parsed sitemap/robots yet?
+-- -- Stats (denormalized for quick access)
+-- total_urls_discovered INTEGER DEFAULT 0,
+-- total_urls_crawled INTEGER DEFAULT 0,
+
+CREATE TABLE profile_urls (
+  id SERIAL PRIMARY KEY,
+  branding_profile_id INTEGER REFERENCES branding_profiles(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,
+  discovered_from VARCHAR(50), -- 'sitemap', 'robots', 'page_link', 'manual_include'
+  depth INTEGER DEFAULT 0,  -- distance from homepage
+  priority_score INTEGER DEFAULT 50,  -- 0-100, higher = more important
+  manual_priority INTEGER,  -- admin override
+  last_crawled_at TIMESTAMP,
+  last_modified_at TIMESTAMP,  -- when content actually changed
+  change_frequency VARCHAR(20) DEFAULT 'unknown',  -- 'hourly', 'daily', 'weekly', 'monthly', 'rarely'
+  consecutive_unchanged_crawls INTEGER DEFAULT 0,  -- how many times it hasn't changed
+  status VARCHAR(20) DEFAULT 'pending',  -- 'pending', 'crawled', 'stale', 'excluded'
+  next_crawl_at TIMESTAMP,  -- when to crawl next
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(branding_profile_id, url)  -- one URL per profile
+);
+
+CREATE INDEX idx_profile_urls_next_crawl ON profile_urls(branding_profile_id, next_crawl_at);
+CREATE INDEX idx_profile_urls_status ON profile_urls(branding_profile_id, status);
+
+CREATE TABLE crawl_configs (
+  id SERIAL PRIMARY KEY,
+  branding_profile_id INTEGER REFERENCES branding_profiles(id) ON DELETE CASCADE,
+  -- Rate limiting & throttling
+  rate_limit_ms INTEGER DEFAULT 1000,  -- delay between requests
+  aggression_level VARCHAR(20) DEFAULT 'moderate',  -- 'conservative', 'moderate', 'aggressive'
+  max_concurrent_requests INTEGER DEFAULT 1,  -- parallel requests per domain
+  -- Budget controls
+  max_pages_per_day INTEGER DEFAULT 1000,  -- daily crawl limit
+  max_pages_per_month INTEGER,  -- optional monthly cap
+  pages_crawled_today INTEGER DEFAULT 0,
+  pages_crawled_this_month INTEGER DEFAULT 0,
+  daily_budget_reset_at TIMESTAMP DEFAULT NOW(),
+  monthly_budget_reset_at TIMESTAMP DEFAULT NOW(),
+  -- Scheduling intervals (moved from branding_profiles)
+  default_crawl_interval_hours INTEGER DEFAULT 24,
+  high_priority_interval_hours INTEGER DEFAULT 6,
+  low_priority_interval_hours INTEGER DEFAULT 168,
+  -- Crawl behavior
+  respect_robots_txt BOOLEAN DEFAULT true,
+  follow_external_links BOOLEAN DEFAULT false,  -- stay within domain
+  max_depth INTEGER DEFAULT 10,  -- how deep to follow links
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  
+  UNIQUE(branding_profile_id)  -- one config per profile
 );
 
 -- Junction: which users can access which profiles
@@ -31,21 +93,21 @@ CREATE TABLE branding_profile_users (
 );
 
 -- Stores every crawl of every page (history preserved)
--- CREATE TABLE crawled_pages (
---   id SERIAL PRIMARY KEY,
---   branding_profile_id INTEGER REFERENCES branding_profiles(id) ON DELETE CASCADE,
---   url TEXT NOT NULL,
---   status_code INTEGER,
---   content TEXT,  -- HTML content
---   headers JSONB,  -- response headers as JSON
---   load_time_ms INTEGER,
---   crawled_at TIMESTAMP DEFAULT NOW(),
---   discovered_from_url TEXT,  -- which page linked to this one
---   depth INTEGER,  -- distance from base URLs
---   page_type VARCHAR(50) DEFAULT 'html'  -- 'html', 'robots', 'sitemap', 'unknown'
--- );
+CREATE TABLE crawled_pages (
+  id SERIAL PRIMARY KEY,
+  branding_profile_id INTEGER REFERENCES branding_profiles(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,
+  status_code INTEGER,
+  content TEXT,  -- HTML content
+  headers JSONB,  -- response headers as JSON
+  load_time_ms INTEGER,
+  crawled_at TIMESTAMP DEFAULT NOW(),
+  discovered_from_url TEXT,  -- which page linked to this one
+  depth INTEGER,  -- distance from base URLs
+  page_type VARCHAR(50) DEFAULT 'html'  -- 'html', 'robots', 'sitemap', 'unknown'
+);
 
--- Just track crawled pages for now, for testing
+-- Just track crawled pages for now, for testing from our landing page
 CREATE TABLE crawled_pages_simple (
   id SERIAL PRIMARY KEY,
   url TEXT NOT NULL,

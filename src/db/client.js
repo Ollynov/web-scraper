@@ -13,6 +13,14 @@ pool.query("SELECT NOW()", (err, res) => {
   }
 });
 
+// Set up listener
+pool.query("LISTEN page_crawled");
+
+pool.on("notification", (msg) => {
+  console.log("Page crawled:", msg.payload);
+  // Could emit to websocket, update cache, etc.
+});
+
 module.exports = {
   query: (text, params) => pool.query(text, params),
   pool,

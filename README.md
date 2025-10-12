@@ -2,7 +2,7 @@
 
 1. Clone the repository
 2. Install dependencies with `npm install`
-3. Create a `.env` file in the root directory and add the following:
+3. Create a `.env` file in the root directory and add the following (you'll need a firecrawl api key):
    ```
    PORT=3000
    DATABASE_URL=postgresql://localhost:5432/web_scraper_mvp
@@ -12,7 +12,7 @@
 4. Create local Postgres database with `createdb web_scraper_mvp` (if this fails, reference Setup Troubleshooting below)
 5. Start the server with `npm run dev`
 
-![Web Scraper Homepage](public/images/Screenshot%202025-10-11%20at%203.57.29%20PM.png)
+![Web Scraper Homepage](public/images/homepage-example.png)
 
 ## Setup Troubleshooting / Extra Details
 
