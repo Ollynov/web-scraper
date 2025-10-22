@@ -8,7 +8,7 @@ CREATE TABLE users (
 );
 
 -- The branding profiles
-CREATE TABLE branding_profiles (
+CREATE TABLE companies (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,  -- "OpenAI", "Acme Corp"
   domain VARCHAR(255) NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE branding_profiles (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
--- Other ideas for branding_profiles:
+-- Other ideas for companies:
 -- high_priority_interval_hours INTEGER DEFAULT 6,   -- for homepage, key pages
 -- low_priority_interval_hours INTEGER DEFAULT 168,  -- for rarely changing pages (7 days)
 -- -- Profile status
@@ -34,7 +34,7 @@ CREATE TABLE branding_profiles (
 
 CREATE TABLE profile_urls (
   id SERIAL PRIMARY KEY,
-  branding_profile_id INTEGER REFERENCES branding_profiles(id) ON DELETE CASCADE,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
   discovered_from VARCHAR(50), -- 'sitemap', 'robots', 'page_link', 'manual_include'
   depth INTEGER DEFAULT 0,  -- distance from homepage
@@ -48,15 +48,15 @@ CREATE TABLE profile_urls (
   next_crawl_at TIMESTAMP,  -- when to crawl next
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(branding_profile_id, url)  -- one URL per profile
+  UNIQUE(company_id, url)  -- one URL per profile
 );
 
-CREATE INDEX idx_profile_urls_next_crawl ON profile_urls(branding_profile_id, next_crawl_at);
-CREATE INDEX idx_profile_urls_status ON profile_urls(branding_profile_id, status);
+CREATE INDEX idx_profile_urls_next_crawl ON profile_urls(company_id, next_crawl_at);
+CREATE INDEX idx_profile_urls_status ON profile_urls(company_id, status);
 
 CREATE TABLE crawl_configs (
   id SERIAL PRIMARY KEY,
-  branding_profile_id INTEGER REFERENCES branding_profiles(id) ON DELETE CASCADE,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
   -- Rate limiting & throttling
   rate_limit_ms INTEGER DEFAULT 1000,  -- delay between requests
   aggression_level VARCHAR(20) DEFAULT 'moderate',  -- 'conservative', 'moderate', 'aggressive'
@@ -68,7 +68,7 @@ CREATE TABLE crawl_configs (
   pages_crawled_this_month INTEGER DEFAULT 0,
   daily_budget_reset_at TIMESTAMP DEFAULT NOW(),
   monthly_budget_reset_at TIMESTAMP DEFAULT NOW(),
-  -- Scheduling intervals (moved from branding_profiles)
+  -- Scheduling intervals (moved from companies)
   default_crawl_interval_hours INTEGER DEFAULT 24,
   high_priority_interval_hours INTEGER DEFAULT 6,
   low_priority_interval_hours INTEGER DEFAULT 168,
@@ -79,23 +79,23 @@ CREATE TABLE crawl_configs (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   
-  UNIQUE(branding_profile_id)  -- one config per profile
+  UNIQUE(company_id)  -- one config per profile
 );
 
 -- Junction: which users can access which profiles
-CREATE TABLE branding_profile_users (
+CREATE TABLE company_users (
   id SERIAL PRIMARY KEY,
-  branding_profile_id INTEGER REFERENCES branding_profiles(id) ON DELETE CASCADE,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   role VARCHAR(20) DEFAULT 'member', -- profile-level: 'owner', 'admin', 'member'
   added_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(branding_profile_id, user_id)  -- prevent duplicate access grants
+  UNIQUE(company_id, user_id)  -- prevent duplicate access grants
 );
 
 -- Stores every crawl of every page (history preserved)
 CREATE TABLE crawled_pages (
   id SERIAL PRIMARY KEY,
-  branding_profile_id INTEGER REFERENCES branding_profiles(id) ON DELETE CASCADE,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
   status_code INTEGER,
   content TEXT,  -- HTML content
@@ -119,15 +119,15 @@ CREATE TABLE crawled_pages_simple (
 );
 
 -- Index for fast "latest crawl" queries
-CREATE INDEX idx_crawled_pages_latest ON crawled_pages(branding_profile_id, url, crawled_at DESC);
-CREATE INDEX idx_crawled_pages_profile_time ON crawled_pages(branding_profile_id, crawled_at);
+CREATE INDEX idx_crawled_pages_latest ON crawled_pages(company_id, url, crawled_at DESC);
+CREATE INDEX idx_crawled_pages_profile_time ON crawled_pages(company_id, crawled_at);
 -- first index gives us the latest for a specific page www.mybrand.com/page1 while the 2nd gives us overall last crawls for that brand (any url)
 -- we may want to do something in between which is brand --> domain if needed 
 
 -- Simple crawl job tracking
 CREATE TABLE crawl_jobs (
   id SERIAL PRIMARY KEY,
-  branding_profile_id INTEGER REFERENCES branding_profiles(id) ON DELETE CASCADE,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
   status VARCHAR(20) DEFAULT 'pending',  -- 'pending', 'running', 'completed', 'failed'
   started_at TIMESTAMP,
   completed_at TIMESTAMP,
