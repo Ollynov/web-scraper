@@ -1,6 +1,6 @@
 ## Intro
 
-This is a web scraper that uses the Firecrawl API to crawl a website and store the results in a local Postgres database. The goal is to provide a way to crawl a website and store the results for later use. The UI is simple, with just an input of a URL and a button to crawl. However, you can check the schema files within the `migrations` folder to see the full data model, which is designed to support a fully featured, production level web scraping platform, which you can extend for your particular use case.
+This is an Express NodeJS web scraper that uses the Firecrawl API to crawl a website and store the results in a local Postgres database. The goal is to provide a way to crawl a website and store the results for later use. The UI is simple, with just an input of a URL and a button to crawl. However, you can check the schema files within the `migrations` folder to see the full data model, which is designed to support a fully featured, production level web scraping platform, which you can extend for your particular use case.
 
 ## Setup
 

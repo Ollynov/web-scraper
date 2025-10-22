@@ -28,7 +28,7 @@ async function crawlUrl(url) {
     console.log("ok all our scraped data: ", data);
 
     const result = await db.query(
-      `INSERT INTO crawled_pages_simple (url, status_code, content, headers, load_time_ms, crawled_at)
+      `INSERT INTO crawled_pages (url, status_code, content, headers, load_time_ms, crawled_at)
        VALUES ($1, $2, $3, $4, $5, NOW())
        RETURNING *`,
       [
