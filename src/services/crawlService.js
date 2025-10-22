@@ -43,7 +43,11 @@ async function crawlUrl(url) {
     console.log(`✅ Crawled and saved: ${url}`);
     // Trigger Postgres notification
     await db.query("SELECT pg_notify('page_crawled', $1)", [
-      JSON.stringify({ url, branding_profile_id, status_code, crawled_at }),
+      JSON.stringify({
+        url,
+        statusCode: data.statusCode || 200,
+        crawled_at: new Date(),
+      }),
     ]);
 
     return result.rows[0];
@@ -53,7 +57,7 @@ async function crawlUrl(url) {
     // Still save the failed attempt
     const loadTime = Date.now() - startTime;
     await db.query(
-      `INSERT INTO crawled_pages_simple (url, status_code, content, headers, load_time_ms, crawled_at)
+      `INSERT INTO crawled_pages (url, status_code, content, headers, load_time_ms, crawled_at)
        VALUES ($1, $2, $3, $4, $5, NOW())`,
       [
         url,

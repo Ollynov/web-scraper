@@ -1,4 +1,4 @@
-// Load pages on startup
+import { formatLoadTime } from "./utils.js";
 
 loadPages();
 
@@ -40,6 +40,14 @@ async function crawlUrl() {
   }
 }
 
+function toggleDetails(index) {
+  const details = document.getElementById(`details-${index}`);
+  const icon = document.getElementById(`icon-${index}`);
+
+  details.classList.toggle("visible");
+  icon.classList.toggle("expanded");
+}
+
 async function loadPages() {
   const pagesList = document.getElementById("pagesList");
   pagesList.innerHTML = '<div class="loading">Loading...</div>';
@@ -62,8 +70,8 @@ async function loadPages() {
 
         return `
                 <div class="page-item">
-                    <div class="page-header" onclick="toggleDetails(${index})">
-                        <span class="expand-icon" id="icon-${index}" >
+                    <div class="page-header" data-index="${index}" >
+                        <span class="expand-icon" id="icon-${index}"  >
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="m9 18 6-6-6-6"/>
                             </svg>
@@ -93,9 +101,9 @@ async function loadPages() {
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Load Time:</span>
-                            <span class="detail-value">${
+                            <span class="detail-value">${formatLoadTime(
                               page.load_time_ms
-                            }ms</span>
+                            )} ms</span>
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Content Size:</span>
@@ -139,14 +147,6 @@ async function loadPages() {
   } catch (error) {
     pagesList.innerHTML = '<p style="color: red;">Failed to load pages</p>';
   }
-}
-
-function toggleDetails(index) {
-  const details = document.getElementById(`details-${index}`);
-  const icon = document.getElementById(`icon-${index}`);
-
-  details.classList.toggle("visible");
-  icon.classList.toggle("expanded");
 }
 
 function getStatusClass(statusCode) {
@@ -222,4 +222,14 @@ function showStatus(message, type) {
 // Allow Enter key to trigger crawl
 document.getElementById("urlInput").addEventListener("keypress", (e) => {
   if (e.key === "Enter") crawlUrl();
+});
+
+// Use event delegation to handle clicks on dynamically created elements
+document.getElementById("pagesList").addEventListener("click", (e) => {
+  const header = e.target.closest(".page-header");
+  if (header) {
+    const index = header.dataset.index;
+    console.log("ok clicked this index: ", index);
+    toggleDetails(index);
+  }
 });

@@ -46,7 +46,7 @@ app.post("/api/crawl", async (req, res) => {
 app.get("/api/pages", async (req, res) => {
   try {
     const result = await db.query(
-      "SELECT id, url, status_code, crawled_at FROM crawled_pages_simple ORDER BY crawled_at DESC LIMIT 50"
+      "SELECT id, url, load_time_ms, status_code, crawled_at FROM crawled_pages ORDER BY crawled_at DESC LIMIT 50"
     );
     res.json(result.rows);
   } catch (error) {

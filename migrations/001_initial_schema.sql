@@ -7,7 +7,7 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- The branding profiles
+-- The companies (a company / brand / website / domain)
 CREATE TABLE companies (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,  -- "OpenAI", "Acme Corp"
@@ -32,7 +32,7 @@ CREATE TABLE companies (
 -- total_urls_discovered INTEGER DEFAULT 0,
 -- total_urls_crawled INTEGER DEFAULT 0,
 
-CREATE TABLE profile_urls (
+CREATE TABLE company_urls (
   id SERIAL PRIMARY KEY,
   company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
@@ -51,8 +51,8 @@ CREATE TABLE profile_urls (
   UNIQUE(company_id, url)  -- one URL per profile
 );
 
-CREATE INDEX idx_profile_urls_next_crawl ON profile_urls(company_id, next_crawl_at);
-CREATE INDEX idx_profile_urls_status ON profile_urls(company_id, status);
+-- CREATE INDEX idx_company_urls_next_crawl ON company_urls(company_id, next_crawl_at);
+-- CREATE INDEX idx_company_urls_status ON company_urls(company_id, status);
 
 CREATE TABLE crawl_configs (
   id SERIAL PRIMARY KEY,
@@ -105,17 +105,6 @@ CREATE TABLE crawled_pages (
   discovered_from_url TEXT,  -- which page linked to this one
   depth INTEGER,  -- distance from base URLs
   page_type VARCHAR(50) DEFAULT 'html'  -- 'html', 'robots', 'sitemap', 'unknown'
-);
-
--- Just track crawled pages for now, for testing from our landing page
-CREATE TABLE crawled_pages_simple (
-  id SERIAL PRIMARY KEY,
-  url TEXT NOT NULL,
-  status_code INTEGER,
-  content TEXT,
-  headers JSONB,
-  load_time_ms INTEGER,
-  crawled_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Index for fast "latest crawl" queries
