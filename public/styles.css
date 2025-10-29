@@ -206,3 +206,35 @@ button:disabled {
   padding: 20px;
   color: #666;
 }
+
+.tree-link {
+  cursor: pointer;
+  font-weight: bold;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tree-link:hover {
+  color: #667eea;
+}
+
+.tree-container {
+  width: 100%;
+}
+
+.tree-content {
+  display: none;
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #495057;
+}
+
+.tree-content.visible {
+  display: block;
+}
