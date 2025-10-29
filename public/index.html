@@ -17,7 +17,8 @@
           placeholder="Enter URL to crawl (e.g., https://example.com)"
           value="https://example.com"
         />
-        <button id="crawlBtn" onclick="crawlUrl()">Crawl</button>
+        <!-- <button id="crawlBtn" onclick="crawlUrl()">Crawl</button> -->
+        <button id="crawlBtn" onclick="simpleScrape()">Crawl</button>
       </div>
 
       <div id="status" class="status"></div>
@@ -29,5 +30,91 @@
     </div>
 
     <script type="module" src="app.js"></script>
+    <script>
+      function simplifyDOMTree(node) {
+        // Only process element or text nodes
+        if (node.nodeType !== 1 && node.nodeType !== 3) return null;
+
+        const simplified = {};
+
+        if (node.nodeType === 1) {
+          // Element node
+          simplified.tag = node.tagName.toLowerCase();
+
+          if (node.id) simplified.id = node.id;
+          if (typeof node.className === "string" && node.className.trim()) {
+            simplified.classes = node.className.split(" ").filter(Boolean);
+          }
+
+          // Recursively process children
+          const childNodes = Array.from(node.childNodes)
+            .map(simplifyDOMTree)
+            .filter(Boolean); // remove nulls
+
+          if (childNodes.length > 0) {
+            simplified.children = childNodes;
+          }
+        }
+
+        if (node.nodeType === 3) {
+          // Text node
+          const text = node.textContent.trim();
+          if (text) {
+            simplified.text = text;
+          } else {
+            return null; // skip empty/whitespace-only text nodes
+          }
+        }
+
+        return simplified;
+      }
+
+      function findByText(simplifiedNode, keyword, path = "html > body") {
+        const matches = [];
+        const lowerKeyword = keyword.toLowerCase();
+
+        function recurse(node, currentPath) {
+          if (!node) return;
+
+          const thisPath = `${currentPath} > ${node.tag || "text"}`;
+
+          // Check for a match in text content
+          if (node.text && node.text.toLowerCase().includes(lowerKeyword)) {
+            matches.push({
+              tag: node.tag || "text",
+              path: thisPath,
+              text: node.text,
+            });
+          }
+
+          // Recurse on children
+          if (node.children && node.children.length > 0) {
+            for (const child of node.children) {
+              recurse(child, thisPath);
+            }
+          }
+        }
+
+        recurse(simplifiedNode, path);
+        return matches;
+      }
+
+      const simpleScrape = async () => {
+        const inputVal = document.getElementById("urlInput").value;
+        const data = await fetch("/api/simple-crawl", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: inputVal }),
+        });
+        const resp = await data.json();
+        console.log("ok our html: ", resp);
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(resp.data, "text/html");
+
+        const simplified = simplifyDOMTree(doc.body);
+        console.dir(simplified, { depth: null });
+      };
+    </script>
   </body>
 </html>

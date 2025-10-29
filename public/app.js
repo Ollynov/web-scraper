@@ -48,6 +48,14 @@ function toggleDetails(index) {
   icon.classList.toggle("expanded");
 }
 
+function showTree(index) {
+  const treeDiv = document.getElementById(`tree-${index}`);
+  const treeIcon = document.getElementById(`tree-icon-${index}`);
+
+  treeDiv.classList.toggle("visible");
+  treeIcon.classList.toggle("expanded");
+}
+
 async function loadPages() {
   const pagesList = document.getElementById("pagesList");
   pagesList.innerHTML = '<div class="loading">Loading...</div>';
@@ -116,6 +124,20 @@ async function loadPages() {
                             <span class="detail-value">${new Date(
                               page.crawled_at
                             ).toLocaleString()}</span>
+                        </div>
+                        <div class="detail-row tree-row" data-index="${index}">
+                            <span class="detail-label"></span>
+                            <div class="detail-value tree-container">
+                                <span class="tree-link">
+                                    <span class="expand-icon tree-icon" id="tree-icon-${index}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="m9 18 6-6-6-6"/>
+                                        </svg>
+                                    </span>
+                                    See HTML Tree
+                                </span>
+                                <div class="tree-content" id="tree-${index}">Tree structure will appear here</div>
+                            </div>
                         </div>
                         ${
                           headers
@@ -226,6 +248,16 @@ document.getElementById("urlInput").addEventListener("keypress", (e) => {
 
 // Use event delegation to handle clicks on dynamically created elements
 document.getElementById("pagesList").addEventListener("click", (e) => {
+  // Check for tree row click first (more specific)
+  const treeRow = e.target.closest(".tree-row");
+  if (treeRow) {
+    e.stopPropagation(); // Prevent triggering the page header click
+    const index = treeRow.dataset.index;
+    showTree(index);
+    return;
+  }
+
+  // Then check for page header click
   const header = e.target.closest(".page-header");
   if (header) {
     const index = header.dataset.index;
